@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import datetime
 import os
+import random
+import re
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -10,34 +12,65 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 scores = {}
 last_claim = {}
+clock_channels = {}
 
-CLOCK_CHANNEL_ID =  1479116154562809970 # replace with your clock channel ID
+wrong_messages = [
+    "Oh! Time mismatched. Are you late or trying to cheat? 👀",
+    "That clock doesn't look right 🤔",
+    "Nice try... but the time doesn't match ⏰",
+    "Oops! That's not the correct time."
+]
+
+# detect if message looks like time
+def is_time_message(msg):
+    return bool(re.fullmatch(r"\d{1,2}:\d{2}|\d{3,4}", msg))
 
 
+# generate all valid time formats
+def generate_valid_times(now):
+
+    h24 = now.strftime("%H")
+    h12 = now.strftime("%I").lstrip("0")
+    m = now.strftime("%M")
+
+    formats = set()
+
+    formats.add(f"{h24}:{m}")
+    formats.add(f"{h12}:{m}")
+
+    formats.add(f"{h24}{m}")
+    formats.add(f"{h12}{m}")
+
+    formats.add(f"{int(h24)}{m}")
+    formats.add(f"{int(h12)}{m}")
+
+    return formats
+
+
+# detect patterns
 def check_pattern(time_str):
 
-    # remove colon
     t = time_str.replace(":", "")
-
     digits = [int(d) for d in t]
 
-    # 1️⃣ repeating numbers (all digits same)
     if len(set(digits)) == 1:
-        return 3, "Repeating Numbers"
+        return 3
 
-    # 2️⃣ palindrome (same forward and backward)
     if digits == digits[::-1]:
-        return 2, "Palindrome"
+        return 2
 
-    # 3️⃣ increasing sequence
     if all(digits[i] + 1 == digits[i+1] for i in range(len(digits)-1)):
-        return 1, "Increasing Sequence"
+        return 1
 
-    # 4️⃣ decreasing sequence
     if all(digits[i] - 1 == digits[i+1] for i in range(len(digits)-1)):
-        return 1, "Decreasing Sequence"
+        return 1
 
-    return 0, None
+    return 0
+
+
+@bot.event
+async def on_ready():
+    print(f"{bot.user} is online!")
 
 
 @bot.event
@@ -46,33 +79,38 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    if message.channel.id != CLOCK_CHANNEL_ID:
+    guild_id = message.guild.id if message.guild else None
+
+    if guild_id not in clock_channels:
+        await bot.process_commands(message)
         return
 
-    now = datetime.datetime.now()
-
-    current_24 = now.strftime("%H:%M")
-    current_12 = now.strftime("%I:%M").lstrip("0")
-
-    valid_inputs = [
-        current_24,
-        current_12,
-        current_24.replace(":", ""),
-        current_12.replace(":", "")
-    ]
+    if message.channel.id != clock_channels[guild_id]:
+        await bot.process_commands(message)
+        return
 
     user_input = message.content.strip()
 
-    # ❌ Wrong time
+    # ignore messages that are not time
+    if not is_time_message(user_input):
+        await bot.process_commands(message)
+        return
+
+    now = datetime.datetime.now()
+    valid_inputs = generate_valid_times(now)
+
     if user_input not in valid_inputs:
 
         scores[message.author.id] = scores.get(message.author.id, 0) - 1
 
         await message.add_reaction("❌")
 
+        await message.channel.send(
+            f"{message.author.mention} {random.choice(wrong_messages)}"
+        )
+
         return
 
-    # anti spam
     minute_key = now.strftime("%Y-%m-%d %H:%M")
 
     if message.author.id in last_claim:
@@ -81,31 +119,38 @@ async def on_message(message):
 
     last_claim[message.author.id] = minute_key
 
-    points = check_pattern(current_24)
+    points = check_pattern(now.strftime("%H:%M"))
 
     if points == 0:
         return
 
     scores[message.author.id] = scores.get(message.author.id, 0) + points
 
-    # ✅ reaction
     await message.add_reaction("✅")
 
-    # point reactions
     if points == 1:
         await message.add_reaction("1️⃣")
-
     elif points == 2:
         await message.add_reaction("2️⃣")
-
     elif points == 3:
         await message.add_reaction("3️⃣")
 
     await bot.process_commands(message)
 
 
+# set clock channel
 @bot.command()
-async def clock(ctx):
+@commands.has_permissions(administrator=True)
+async def setclock(ctx):
+
+    clock_channels[ctx.guild.id] = ctx.channel.id
+
+    await ctx.send("⏰ This channel is now the clock channel!")
+
+
+# leaderboard
+@bot.command()
+async def clockscore(ctx):
 
     if not scores:
         await ctx.send("No scores yet.")
