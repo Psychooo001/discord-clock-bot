@@ -6,7 +6,31 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+@bot.command()
+async def leaderboard(ctx):
 
+    if not scores:
+        await ctx.send("No scores yet.")
+        return
+
+    board = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+    msg = "Leaderboard:\n"
+
+    for user_id, pts in board[:10]:
+        user = await bot.fetch_user(user_id)
+        msg += f"{user.name} - {pts}\n"
+
+    await ctx.send(msg)
+    
+@bot.command()
+async def score(ctx):
+    user = ctx.author.id
+
+    if user not in scores:
+        await ctx.send("You have 0 points.")
+    else:
+        await ctx.send(f"You have {scores[user]} points.")
 scores = {}
 
 def is_palindrome(t):
