@@ -1,9 +1,10 @@
 import discord
 from discord.ext import commands
 import datetime
+import os
 
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_conte0nt = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -101,7 +102,6 @@ async def leaderboard(ctx):
 
     await ctx.send(msg)
 
-import os
 bot.run(os.getenv("TOKEN"))
 
 
