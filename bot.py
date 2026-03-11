@@ -101,6 +101,6 @@ async def leaderboard(ctx):
 
     await ctx.send(msg)
 
-bot.run("MTQ4MDk4MDk1NTYxNDQxMjk4Mw.G10Ugl.m7PsjZmmTYDPA0sm3Qg9zpIVw2Oen0kSYcG00M")
+bot.run("MTQ4MDk4MDk1NTYxNDQxMjk4MW.G1OuGl.m7PsjZrmTYDPaOSm3Qg9zpIVw2Oen0k5YcG0")
 
 
