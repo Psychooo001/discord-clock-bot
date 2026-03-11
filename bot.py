@@ -4,7 +4,7 @@ import datetime
 import os
 
 intents = discord.Intents.default()
-intents.message_conte0nt = True
+intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
