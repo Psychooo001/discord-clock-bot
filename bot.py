@@ -101,6 +101,7 @@ async def leaderboard(ctx):
 
     await ctx.send(msg)
 
-bot.run("MTQ4MDk4MDk1NTYxNDQxMjk4MW.G1OuGl.m7PsjZrmTYDPaOSm3Qg9zpIVw2Oen0k5YcG00M")
+import os
+bot.run(os.getenv("TOKEN"))
 
 
