@@ -4,15 +4,20 @@ import datetime
 import os
 import random
 import re
+from zoneinfo import ZoneInfo
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# data storage
 scores = {}
 last_claim = {}
 clock_channels = {}
+user_timezones = {}
+
+DEFAULT_TZ = "Asia/Kolkata"
 
 wrong_messages = [
     "Oh! Time mismatched. Are you late or trying to cheat? 👀",
@@ -20,6 +25,7 @@ wrong_messages = [
     "Nice try... but the time doesn't match ⏰",
     "Oops! That's not the correct time."
 ]
+
 
 # detect if message looks like time
 def is_time_message(msg):
@@ -47,21 +53,25 @@ def generate_valid_times(now):
     return formats
 
 
-# detect patterns
+# pattern detection
 def check_pattern(time_str):
 
     t = time_str.replace(":", "")
     digits = [int(d) for d in t]
 
+    # repeating numbers
     if len(set(digits)) == 1:
         return 3
 
+    # palindrome
     if digits == digits[::-1]:
         return 2
 
+    # increasing sequence
     if all(digits[i] + 1 == digits[i+1] for i in range(len(digits)-1)):
         return 1
 
+    # decreasing sequence
     if all(digits[i] - 1 == digits[i+1] for i in range(len(digits)-1)):
         return 1
 
@@ -70,7 +80,7 @@ def check_pattern(time_str):
 
 @bot.event
 async def on_ready():
-    print(f"{bot.user} is online!")
+    print(f"{bot.user} is online")
 
 
 @bot.event
@@ -79,7 +89,10 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    guild_id = message.guild.id if message.guild else None
+    if not message.guild:
+        return
+
+    guild_id = message.guild.id
 
     if guild_id not in clock_channels:
         await bot.process_commands(message)
@@ -91,14 +104,18 @@ async def on_message(message):
 
     user_input = message.content.strip()
 
-    # ignore messages that are not time
+    # ignore non time messages
     if not is_time_message(user_input):
         await bot.process_commands(message)
         return
 
-    now = datetime.datetime.now()
+    tz = user_timezones.get(message.author.id, DEFAULT_TZ)
+
+    now = datetime.datetime.now(ZoneInfo(tz))
+
     valid_inputs = generate_valid_times(now)
 
+    # wrong time
     if user_input not in valid_inputs:
 
         scores[message.author.id] = scores.get(message.author.id, 0) - 1
@@ -138,7 +155,7 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-# set clock channel
+# ADMIN: set clock channel
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def setclock(ctx):
@@ -148,7 +165,7 @@ async def setclock(ctx):
     await ctx.send("⏰ This channel is now the clock channel!")
 
 
-# leaderboard
+# show leaderboard
 @bot.command()
 async def clockscore(ctx):
 
@@ -165,6 +182,39 @@ async def clockscore(ctx):
         msg += f"{user.name}: {score}\n"
 
     await ctx.send(msg)
+
+
+# check personal score
+@bot.command()
+async def myscore(ctx):
+
+    score = scores.get(ctx.author.id, 0)
+
+    await ctx.send(f"{ctx.author.mention} your clock score is {score}")
+
+
+# set timezone
+@bot.command()
+async def settimezone(ctx, tz):
+
+    try:
+        ZoneInfo(tz)
+    except:
+        await ctx.send("❌ Invalid timezone. Example: Asia/Kolkata or America/New_York")
+        return
+
+    user_timezones[ctx.author.id] = tz
+
+    await ctx.send(f"🌍 {ctx.author.mention} timezone set to `{tz}`")
+
+
+# check timezone
+@bot.command()
+async def mytimezone(ctx):
+
+    tz = user_timezones.get(ctx.author.id, DEFAULT_TZ)
+
+    await ctx.send(f"🕒 Your timezone is `{tz}`")
 
 
 bot.run(os.getenv("TOKEN"))
