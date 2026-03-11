@@ -15,22 +15,29 @@ CLOCK_CHANNEL_ID = 1234567890  # replace with your clock channel ID
 
 
 def check_pattern(time_str):
+
+    # remove colon
     t = time_str.replace(":", "")
 
-    # repeating numbers
-    if len(set(t)) == 1:
-        return 3
+    digits = [int(d) for d in t]
 
-    # palindrome
-    if t == t[::-1]:
-        return 2
+    # 1️⃣ repeating numbers (all digits same)
+    if len(set(digits)) == 1:
+        return 3, "Repeating Numbers"
 
-    # sequence
-    seq = "0123456789"
-    if t in seq:
-        return 1
+    # 2️⃣ palindrome (same forward and backward)
+    if digits == digits[::-1]:
+        return 2, "Palindrome"
 
-    return 0
+    # 3️⃣ increasing sequence
+    if all(digits[i] + 1 == digits[i+1] for i in range(len(digits)-1)):
+        return 1, "Increasing Sequence"
+
+    # 4️⃣ decreasing sequence
+    if all(digits[i] - 1 == digits[i+1] for i in range(len(digits)-1)):
+        return 1, "Decreasing Sequence"
+
+    return 0, None
 
 
 @bot.event
