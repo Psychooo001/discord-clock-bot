@@ -6,31 +6,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-@bot.command()
-async def leaderboard(ctx):
 
-    if not scores:
-        await ctx.send("No scores yet.")
-        return
-
-    board = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
-    msg = "Leaderboard:\n"
-
-    for user_id, pts in board[:10]:
-        user = await bot.fetch_user(user_id)
-        msg += f"{user.name} - {pts}\n"
-
-    await ctx.send(msg)
-    
-@bot.command()
-async def score(ctx):
-    user = ctx.author.id
-
-    if user not in scores:
-        await ctx.send("You have 0 points.")
-    else:
-        await ctx.send(f"You have {scores[user]} points.")
 scores = {}
 
 def is_palindrome(t):
@@ -39,16 +15,18 @@ def is_palindrome(t):
 
 def is_sequence(t):
     s = t.replace(":", "")
-    sequences = ["1234","2345","3456","4567","5678","6789"]
-    return s in sequences
+    seq = "0123456789"
+    return s in seq
 
 def is_repeat(t):
     s = t.replace(":", "")
     return len(set(s)) == 1
 
+
 @bot.event
 async def on_ready():
     print("Bot is online!")
+
 
 @bot.event
 async def on_message(message):
@@ -85,5 +63,43 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-bot.run("MTQ4MDk4MDk1NTYxNDQxMjk4Mw.G-Y88J.P12SykqY_F-Xd3CKDvqoWBOU4KvqB7sVSKttHs")
+
+# MAIN CLOCK COMMAND
+@bot.group()
+async def clock(ctx):
+    if ctx.invoked_subcommand is None:
+        await ctx.send("Clock commands: score, leaderboard")
+
+
+# SCORE COMMAND
+@clock.command()
+async def score(ctx):
+
+    user = ctx.author.id
+
+    if user not in scores:
+        await ctx.send("You have 0 points.")
+    else:
+        await ctx.send(f"You have {scores[user]} points.")
+
+
+# LEADERBOARD
+@clock.command()
+async def leaderboard(ctx):
+
+    if not scores:
+        await ctx.send("No scores yet.")
+        return
+
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+    msg = "Clock Leaderboard:\n"
+
+    for user_id, pts in sorted_scores[:10]:
+        user = await bot.fetch_user(user_id)
+        msg += f"{user.name} - {pts}\n"
+
+    await ctx.send(msg)
+
+bot.run("MTQ4MDk4MDk1NTYxNDQxMjk4Mw.G10Ugl.m7PsjZmmTYDPA0sm3Qg9zpIVw2Oen0kSYcG
 
