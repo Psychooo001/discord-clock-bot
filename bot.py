@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 scores = {}
 last_claim = {}
 
-CLOCK_CHANNEL_ID = 1234567890  # replace with your clock channel ID
+CLOCK_CHANNEL_ID =  1479116154562809970 # replace with your clock channel ID
 
 
 def check_pattern(time_str):
