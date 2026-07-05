@@ -8,3 +8,11 @@ export default defineConfig({
     base44({
       // Support for legacy code that imports the base44 SDK with @/integrations, @/entities, etc.
       legacySDKImports: process.env.BASE44_LEGACY_SDK_IMPORTS === 'true',
+      hmrNotifier: true,
+      navigationNotifier: true,
+      analyticsTracker: true,
+      visualEditAgent: true
+    }),
+    react(),
+  ]
+});
